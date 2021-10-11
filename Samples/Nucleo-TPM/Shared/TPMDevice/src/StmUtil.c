@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <time.h>
 #include "stm32l4xx_hal.h"
-#include "usb_device.h"
 #include "StmUtil.h"
 
 // RTC initialized by MX_RTC_Init

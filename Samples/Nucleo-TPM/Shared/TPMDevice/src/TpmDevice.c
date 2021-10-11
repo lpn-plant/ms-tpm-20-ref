@@ -722,7 +722,7 @@ bool TpmOperationsLoop(void)
         tpmOp.flags.powerOffRequested = 0;
         dbgPrint("Executing _plat__Signal_PowerOff()\r\n");
         _plat__Signal_PowerOff();
-        KillUSBLink();
+        //KillUSBLink();
         return false;
     }
 
@@ -784,14 +784,14 @@ bool TpmOperationsLoop(void)
         if(tpmOp.rspSize > 0)
         {
             uint32_t chunk = 0;
-            while(CDC_Transmit_FS((unsigned char*)&tpmOp.msgBuf, 0) != 0); // Wake up the link
-            while(CDC_Transmit_FS((unsigned char*)&tpmOp.msgBuf, 14) != 0); // Send the header which is the minimum size
-            for(uint32_t n = 14; n < tpmOp.rspSize; n += chunk) // Send the rest in 16 byte increments
-            {
-                chunk = MIN(16, tpmOp.rspSize - n);
-                while(CDC_Transmit_FS((unsigned char*)&tpmOp.msgBuf[n], chunk) != 0);
-//                dbgPrint("Sent(%u)\r\n", (unsigned int)(n + chunk));
-            }
+            //while(CDC_Transmit_FS((unsigned char*)&tpmOp.msgBuf, 0) != 0); // Wake up the link
+            //while(CDC_Transmit_FS((unsigned char*)&tpmOp.msgBuf, 14) != 0); // Send the header which is the minimum size
+//            for(uint32_t n = 14; n < tpmOp.rspSize; n += chunk) // Send the rest in 16 byte increments
+//            {
+//                chunk = MIN(16, tpmOp.rspSize - n);
+//                while(CDC_Transmit_FS((unsigned char*)&tpmOp.msgBuf[n], chunk) != 0);
+////                dbgPrint("Sent(%u)\r\n", (unsigned int)(n + chunk));
+//            }
             itmPrint(ITMSIGNAL, "Response(%d)\r\n", tpmOp.rspSize);
         }
     }
