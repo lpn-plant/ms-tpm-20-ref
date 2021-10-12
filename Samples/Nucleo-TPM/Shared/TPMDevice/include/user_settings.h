@@ -44,7 +44,6 @@
 #define ECC_SHAMIR
 #define USE_FAST_MATH
 #define WOLFSSL_PUBLIC_ECC_ADD_DBL
-#define LIBRARY_COMPATIBILITY_CHECK 1
 #define WOLFSSL_USER_IO
 
 #ifdef __cplusplus
