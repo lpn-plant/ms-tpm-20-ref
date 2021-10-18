@@ -105,7 +105,7 @@
 		<link>
 			<name>Middlewares/wolfcrypt</name>
 			<type>2</type>
-			<locationURI>PARENT-5-PROJECT_LOC/ms-tpm-20-ref_rolback/external/wolfssl/wolfcrypt/src</locationURI>
+			<locationURI>PARENT-3-PROJECT_LOC/external/wolfssl/wolfcrypt/src</locationURI>
 		</link>
 		<link>
 			<name>Src/syscalls.c</name>
