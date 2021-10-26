@@ -807,6 +807,75 @@ void TpmConnectionReset(void)
     memset((void*)tpmOp.msgBuf, 0x00, sizeof(tpmOp.msgBuf));
 }
 
+bool TpmSignalEvent_tmp(uint8_t* Buf, uint32_t *Len)
+{
+    COMMAND              command;
+    TPM_RC               result;            // return code for the command
+    UINT32               commandSize;
+
+    // Get command buffer size and command buffer.
+    command.parameterBuffer = Buf;
+    command.parameterSize = *Len;
+
+    // Parse command header: tag, commandSize and command.code.
+    // First parse the tag. The unmarshaling routine will validate
+    // that it is either TPM_ST_SESSIONS or TPM_ST_NO_SESSIONS.
+    result = TPMI_ST_COMMAND_TAG_Unmarshal(&command.tag,
+                                           &command.parameterBuffer,
+                                           &command.parameterSize);
+    if(result != TPM_RC_SUCCESS) {
+        goto Cleanup;
+    }
+    // Unmarshal the commandSize indicator.
+    result = UINT32_Unmarshal(&commandSize,
+                              &command.parameterBuffer,
+                              &command.parameterSize);
+    if(result != TPM_RC_SUCCESS) {
+        goto Cleanup;
+    }
+    // On a TPM that receives bytes on a port, the number of bytes that were
+    // received on that port is requestSize it must be identical to commandSize.
+    // In addition, commandSize must not be larger than MAX_COMMAND_SIZE allowed
+    // by the implementation. The check against MAX_COMMAND_SIZE may be redundant
+    // as the input processing (the function that receives the command bytes and
+    // places them in the input buffer) would likely have the input truncated when
+    // it reaches MAX_COMMAND_SIZE, and requestSize would not equal commandSize.
+    if(commandSize != *Len || commandSize > MAX_COMMAND_SIZE)
+    {
+        result = TPM_RC_COMMAND_SIZE;
+        goto Cleanup;
+    }
+    // Unmarshal the command code.
+    result = TPM_CC_Unmarshal(&command.code, &command.parameterBuffer,
+                              &command.parameterSize);
+    if(result != TPM_RC_SUCCESS)
+    {
+        goto Cleanup;
+    }
+    // Check to see if the command is implemented.
+    command.index = CommandCodeToCommandIndex(command.code);
+
+
+    uint8_t command_bytes[4] = {};
+    UINT32_TO_BYTE_ARRAY(command.code, &command_bytes);
+
+    dbgPrint("Executing command %s\r\n", TpmDecodeTPM_CC(command_bytes));
+
+    dbgPrint("Executing command %s\r\n", TpmDecodeTPM_CC((uint8_t*)&Buf[6]));
+
+    if(UNIMPLEMENTED_COMMAND_INDEX == command.index)
+    {
+        result = TPM_RC_COMMAND_CODE;
+        goto Cleanup;
+    }
+
+    return true;
+
+    Cleanup:
+    dbgPrint("Cleanup\r\n");
+    return false;
+}
+
 bool TpmSignalEvent(uint8_t* Buf, uint32_t *Len)
 {
     // Pending inbound transfer

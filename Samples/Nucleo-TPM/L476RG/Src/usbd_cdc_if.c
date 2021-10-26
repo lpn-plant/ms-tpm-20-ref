@@ -55,6 +55,7 @@
 #include <time.h>
 #include "StmUtil.h"
 #include "stm32l4xx_hal.h"
+#include "circular_buffer.h"
 
 /* USER CODE END INCLUDE */
 
@@ -64,7 +65,7 @@
 
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
-
+extern cbuf_handle_t cbuf_handle;
 /* USER CODE END PV */
 
 /** @addtogroup STM32_USB_OTG_DEVICE_LIBRARY
@@ -80,7 +81,9 @@
   * @brief Private types.
   * @{
   */
+#include "circular_buffer.h"
 
+extern cbuf_handle_t cbuf_handle;
 /* USER CODE BEGIN PRIVATE_TYPES */
 #define CDC_RTS_MASK   0x0002
 #define CDC_DTR_MASK   0x0001
@@ -341,10 +344,11 @@ static int8_t CDC_Control_FS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
 static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 {
   /* USER CODE BEGIN 6 */
-    if(!TpmSignalEvent(Buf, Len))
-    {
-        return(USBD_FAIL);
-    }
+  for(int i=0; i<*Len; i++) {
+    circular_buf_put(cbuf_handle, Buf[i]);
+    itmPrintAppend(ITMSTDERR, "0x%x ", Buf[i]);
+  }
+  itmPrintAppend(ITMSTDERR, "\n");
 
   USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &Buf[0]);
   USBD_CDC_ReceivePacket(&hUsbDeviceFS);

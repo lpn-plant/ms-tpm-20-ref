@@ -57,6 +57,7 @@
 #include <time.h>
 #include "TpmDevice.h"
 #include "StmUtil.h"
+#include "circular_buffer.h"
 
 /* USER CODE END Includes */
 
@@ -69,6 +70,9 @@ UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
+#define EXAMPLE_BUFFER_SIZE 256
+uint8_t uart_buffer[EXAMPLE_BUFFER_SIZE] = {};
+cbuf_handle_t cbuf_handle;
 
 /* USER CODE END PV */
 
@@ -106,7 +110,7 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
-
+  cbuf_handle = circular_buf_init(uart_buffer, EXAMPLE_BUFFER_SIZE);
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -144,11 +148,60 @@ int main(void)
   /* USER CODE END WHILE */
 
   /* USER CODE BEGIN 3 */
-      if(!TpmOperationsLoop())
-      {
-          _Error_Handler(__FILE__, __LINE__);
-      }
+    HAL_Delay(500);
+    uint8_t data[EXAMPLE_BUFFER_SIZE] = { };
+    size_t avail = circular_buf_size(cbuf_handle);
 
+    for (int i = 0; i < avail; i++) {
+
+      __disable_irq();
+      int ret = circular_buf_get(cbuf_handle, &data[i]);
+      __enable_irq();
+
+      if (ret != 0) {
+        fprintf(stderr, "ret != 0) %d \r\n", ret);
+        Error_Handler();
+      }
+    }
+
+    if (avail != 0) {
+      if (!TpmSignalEvent_tmp(&data, &avail)) {
+        fprintf(stderr, "TpmSignalEvent_tmp failed \r\n");
+      } else {
+
+        size_t rspLenTPM = EXAMPLE_BUFFER_SIZE;
+        unsigned char *rspTPM = (unsigned char*) &data;
+
+        time_t execStart = time(NULL);
+        _plat__RunCommand(avail, data, &rspLenTPM, &rspTPM);
+        //*((unsigned int*)tpmOp.msgBuf) = rspLenTPM;
+        time_t execEnd = time(NULL);
+        //dbgPrint("Completion time %u'%u\" with ReturnCode %s\r\n", (unsigned int)(execEnd - execStart) / 60, (unsigned int)(execEnd - execStart) % 60, TpmDecodeTPM_RC(&rspTPM[6]));
+
+        itmPrintAppend(ITMCMDRSP, "//%s\r\nunsigned char RspBuf[%d] = {",
+            GetLogStamp(), EXAMPLE_BUFFER_SIZE);
+        for (uint32_t n = 0; n < rspLenTPM; n++) {
+          if (n > 0)
+            itmPrintAppend(ITMCMDRSP, ", ");
+          if (!(n % 16))
+            itmPrintAppend(ITMCMDRSP, "\r\n");
+          itmPrintAppend(ITMCMDRSP, "0x%02x", rspTPM[n]);
+        }
+        itmPrintAppend(ITMCMDRSP, "\r\n};\r\n");
+
+        dbgPrint("CDC_Transmit_FS(%u)\r\n", rspLenTPM);
+        uint32_t chunk = 0;
+        // Send the rest in 16 byte increments
+        for (uint32_t n = 0; n < rspLenTPM; n += chunk) {
+          chunk = MIN(16, rspLenTPM - n);
+          while (CDC_Transmit_FS(&rspTPM[n], chunk) != 0);
+        }
+        itmPrint(ITMSIGNAL, "Response(%d)\r\n", tpmOp.rspSize);
+      }
+    }
+//    if(!TpmOperationsLoop()) {
+//      _Error_Handler(__FILE__, __LINE__);
+//    }
   }
   /* USER CODE END 3 */
 
