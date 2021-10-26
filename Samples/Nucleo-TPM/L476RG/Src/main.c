@@ -168,40 +168,12 @@ int main(void)
       if (!TpmSignalEvent_tmp(&data, &avail)) {
         fprintf(stderr, "TpmSignalEvent_tmp failed \r\n");
       } else {
-
-        size_t rspLenTPM = EXAMPLE_BUFFER_SIZE;
-        unsigned char *rspTPM = (unsigned char*) &data;
-
-        time_t execStart = time(NULL);
-        _plat__RunCommand(avail, data, &rspLenTPM, &rspTPM);
-        //*((unsigned int*)tpmOp.msgBuf) = rspLenTPM;
-        time_t execEnd = time(NULL);
-        //dbgPrint("Completion time %u'%u\" with ReturnCode %s\r\n", (unsigned int)(execEnd - execStart) / 60, (unsigned int)(execEnd - execStart) % 60, TpmDecodeTPM_RC(&rspTPM[6]));
-
-        itmPrintAppend(ITMCMDRSP, "//%s\r\nunsigned char RspBuf[%d] = {",
-            GetLogStamp(), EXAMPLE_BUFFER_SIZE);
-        for (uint32_t n = 0; n < rspLenTPM; n++) {
-          if (n > 0)
-            itmPrintAppend(ITMCMDRSP, ", ");
-          if (!(n % 16))
-            itmPrintAppend(ITMCMDRSP, "\r\n");
-          itmPrintAppend(ITMCMDRSP, "0x%02x", rspTPM[n]);
+        // reuse `data` both for cmd and res buffer
+        if(!TpmOperationsLoop_tmp(&data, avail, &data, EXAMPLE_BUFFER_SIZE)) {
+          _Error_Handler(__FILE__, __LINE__);
         }
-        itmPrintAppend(ITMCMDRSP, "\r\n};\r\n");
-
-        dbgPrint("CDC_Transmit_FS(%u)\r\n", rspLenTPM);
-        uint32_t chunk = 0;
-        // Send the rest in 16 byte increments
-        for (uint32_t n = 0; n < rspLenTPM; n += chunk) {
-          chunk = MIN(16, rspLenTPM - n);
-          while (CDC_Transmit_FS(&rspTPM[n], chunk) != 0);
-        }
-        itmPrint(ITMSIGNAL, "Response(%d)\r\n", tpmOp.rspSize);
       }
     }
-//    if(!TpmOperationsLoop()) {
-//      _Error_Handler(__FILE__, __LINE__);
-//    }
   }
   /* USER CODE END 3 */
 

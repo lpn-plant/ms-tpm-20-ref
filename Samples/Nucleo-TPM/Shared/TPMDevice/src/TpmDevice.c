@@ -702,6 +702,36 @@ bool TpmInitializeDevice(void)
     }
     return (retVal == 0);
 }
+bool TpmOperationsLoop_tmp(unsigned char *cmdTPM, size_t cmdLenTPM,
+    unsigned char *rspTPM, size_t rspLenTPM)
+{
+  time_t execStart = time(NULL);
+  _plat__RunCommand(cmdLenTPM, cmdTPM, &rspLenTPM, &rspTPM);
+  time_t execEnd = time(NULL);
+
+  dbgPrint("Completion time %u'%u\" with ReturnCode %s\r\n",
+      (unsigned int )(execEnd - execStart) / 60,
+      (unsigned int )(execEnd - execStart) % 60, TpmDecodeTPM_RC(&rspTPM[6]));
+
+  itmPrintAppend(ITMCMDRSP, "//%s\r\nunsigned char RspBuf[%d] = {",
+      GetLogStamp(), rspLenTPM);
+  for (uint32_t n = 0; n < rspLenTPM; n++) {
+    if (n > 0)
+      itmPrintAppend(ITMCMDRSP, ", ");
+    if (!(n % 16))
+      itmPrintAppend(ITMCMDRSP, "\r\n");
+    itmPrintAppend(ITMCMDRSP, "0x%02x", rspTPM[n]);
+  }
+  itmPrintAppend(ITMCMDRSP, "\r\n};\r\n");
+
+  uint32_t chunk = 0;
+  // Send the rest in 16 byte increments
+  for (uint32_t n = 0; n < rspLenTPM; n += chunk) {
+    chunk = MIN(16, rspLenTPM - n);
+    while (CDC_Transmit_FS(&rspTPM[n], chunk) != 0);
+  }
+  itmPrint(ITMSIGNAL, "Response(%d)\r\n", tpmOp.rspSize);
+}
 
 bool TpmOperationsLoop(void)
 {
