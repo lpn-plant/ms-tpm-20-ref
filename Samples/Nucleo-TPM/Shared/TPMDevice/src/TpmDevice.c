@@ -730,7 +730,7 @@ bool TpmOperationsLoop_tmp(unsigned char *cmdTPM, size_t cmdLenTPM,
     chunk = MIN(16, rspLenTPM - n);
     while (CDC_Transmit_FS(&rspTPM[n], chunk) != 0);
   }
-  itmPrint(ITMSIGNAL, "Response(%d)\r\n", tpmOp.rspSize);
+  itmPrint(ITMSIGNAL, "Response(%d)\r\n", rspLenTPM);
 }
 
 bool TpmOperationsLoop(void)
@@ -843,6 +843,18 @@ bool TpmSignalEvent_tmp(uint8_t* Buf, uint32_t *Len)
     TPM_RC               result;            // return code for the command
     UINT32               commandSize;
 
+    itmPrint(ITMSIGNAL, "SignalCommand(%d)\r\n", *Len);
+
+    itmPrintAppend(ITMCMDRSP, "//%s\r\nunsigned char CmdBuf[%d] = {", GetLogStamp(), *Len);
+    for(uint32_t n = 0; n < *Len; n++)
+    {
+        if(n > 0) itmPrintAppend(ITMCMDRSP, ", ");
+        if(!(n % 16)) itmPrintAppend(ITMCMDRSP, "\r\n");
+        itmPrintAppend(ITMCMDRSP, "0x%02x", Buf[n]);
+    }
+    itmPrintAppend(ITMCMDRSP, "\r\n};\r\n");
+
+
     // Get command buffer size and command buffer.
     command.parameterBuffer = Buf;
     command.parameterSize = *Len;
@@ -890,8 +902,7 @@ bool TpmSignalEvent_tmp(uint8_t* Buf, uint32_t *Len)
     UINT32_TO_BYTE_ARRAY(command.code, &command_bytes);
 
     dbgPrint("Executing command %s\r\n", TpmDecodeTPM_CC(command_bytes));
-
-    dbgPrint("Executing command %s\r\n", TpmDecodeTPM_CC((uint8_t*)&Buf[6]));
+//    dbgPrint("Executing command %s\r\n", TpmDecodeTPM_CC((uint8_t*)&Buf[6]));
 
     if(UNIMPLEMENTED_COMMAND_INDEX == command.index)
     {

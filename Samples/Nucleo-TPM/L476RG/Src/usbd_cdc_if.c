@@ -346,9 +346,7 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
   /* USER CODE BEGIN 6 */
   for(int i=0; i<*Len; i++) {
     circular_buf_put(cbuf_handle, Buf[i]);
-    itmPrintAppend(ITMSTDERR, "0x%x ", Buf[i]);
   }
-  itmPrintAppend(ITMSTDERR, "\n");
 
   USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &Buf[0]);
   USBD_CDC_ReceivePacket(&hUsbDeviceFS);
