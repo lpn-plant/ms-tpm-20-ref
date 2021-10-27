@@ -1,0 +1,37 @@
+#!/usr/bin/python3
+
+import sys
+sys.path.insert(1, './utils')
+
+from SerialEmulator import SerialEmulator
+from utils import wait_for_response
+
+startup_cmd = b'\x80\x01\x00\x00\x00\x0c\x00\x00\x01{\x00\x08'
+startup_res = b'\x80\x01\00\x00\x00\x0a\x00\x00\x00\x00'
+
+# create /tmp/ttydevice serial emulator
+print("Creating serial emulator...")
+ser = SerialEmulator()
+
+print("Waiting for input command...")
+res = wait_for_response(ser)
+
+print("\tComparing command to reference...")
+compare_cmd(res, startup_cmd, "startup")
+
+print("\tReplying with startup response...")
+ser.write(startup_res)
+ser.write(startup_res)
+
+#print("Waiting for input command...")
+#res = wait_for_response(ser)
+#print("\tComparing command to reference...")
+#compare_cmd(res, second_cmd, "startup 2")
+#print("\tReplying with startup response...")
+#ser.write(startup_res)
+#ser.write( b'\x80\x01\x00\x00\x00')
+
+#res = wait_for_response(ser)
+#print(res)
+#print(res)
+

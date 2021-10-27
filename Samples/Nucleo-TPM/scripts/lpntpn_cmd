@@ -1,0 +1,72 @@
+#!/usr/bin/python3
+
+import sys
+sys.path.insert(1, './utils')
+
+import sys
+def add_bool_arg(parser, name, default=False, help_txt='feature'):
+    group = parser.add_mutually_exclusive_group(required=False)
+    group.add_argument('--' + name, dest=name, action='store_true',
+                       help=help_txt+' (default: %(default)s)')
+    group.add_argument('--no-' + name, dest=name, action='store_false',
+                       help=help_txt+' (default: %(default)s)')
+    parser.set_defaults(**{name:default})
+
+
+import argparse
+
+parser = argparse.ArgumentParser(description='Sends TPM commands over serial port.')
+
+parser.add_argument('--command',
+                    default='startup',
+                    choices=('startup', 'shutdown'),
+                    help='command (default: %(default)s)',
+                    required=True)
+
+add_bool_arg(parser, 'legacy', default='--no-legacy',
+             help_txt='legacy mode: VCOM application support')
+
+args = parser.parse_args()
+
+from utils import wait_for_response
+
+import serial
+import time
+
+cmd_header = b'\x54\x70\x6d\x32\x06\x00\x00\x00\x14\x00\x00\x00\x00\x00\x00\x00'
+cmd_startup_size = b'\x0c\x00\x00\x00'
+cmd_startup = b'\x80\x01\x00\x00\x00\x0c\x00\x00\x01\x44\x00\x00'
+cmd_shutdown = b'\x80\x01\x00\x00\x00\x0c\x00\x00\x01\x45\x00\x00'
+
+
+output_cmd=b''
+
+if args.legacy == True:
+    print('running in legacy mode...')
+    output_cmd += cmd_header + cmd_startup_size  
+else:
+    print('running in non legacy mode...')
+    output_cmd=b''
+
+if args.command == 'startup':
+    output_cmd += cmd_startup
+if args.command == 'shutdown':
+    output_cmd += cmd_shutdown
+
+ser = serial.Serial(
+    port='/dev/ttyACM1',
+    baudrate=115200,
+    parity=serial.PARITY_NONE,
+    stopbits=serial.STOPBITS_TWO,
+    bytesize=serial.SEVENBITS
+)
+
+print("executing {} command...".format(args.command))
+print("\t sending: {}".format(output_cmd))
+
+ser.write(output_cmd)
+
+print("waiting for response...")
+data = wait_for_response(ser)
+print("\t received: {}".format(data))
+
