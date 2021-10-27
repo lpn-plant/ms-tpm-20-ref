@@ -57,7 +57,7 @@
 #include <time.h>
 #include "TpmDevice.h"
 #include "StmUtil.h"
-#include "circular_buffer.h"
+#include "cdc_data.h"
 
 /* USER CODE END Includes */
 
@@ -70,9 +70,6 @@ UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
-#define EXAMPLE_BUFFER_SIZE 256
-uint8_t uart_buffer[EXAMPLE_BUFFER_SIZE] = {};
-cbuf_handle_t cbuf_handle;
 
 /* USER CODE END PV */
 
@@ -110,7 +107,7 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
-  cbuf_handle = circular_buf_init(uart_buffer, EXAMPLE_BUFFER_SIZE);
+  cdc_buffer_init();
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -149,34 +146,22 @@ int main(void)
 
   /* USER CODE BEGIN 3 */
     HAL_Delay(500);
-    uint8_t data[EXAMPLE_BUFFER_SIZE] = { };
-    size_t avail = circular_buf_size(cbuf_handle);
+    cdc_input_data input;
+    cdc_get_data(&input);
 
-    for (int i = 0; i < avail; i++) {
-
-      __disable_irq();
-      int ret = circular_buf_get(cbuf_handle, &data[i]);
-      __enable_irq();
-
-      if (ret != 0) {
-        fprintf(stderr, "ret != 0) %d \r\n", ret);
-        Error_Handler();
-      }
-    }
-
-    if (avail != 0) {
+    if (input.avail != 0) {
 #define NEW_SIGNAL_HANDLING
 #ifdef NEW_SIGNAL_HANDLING
-      if (!TpmSignalEvent_tmp(&data, &avail)) {
+      if (!TpmSignalEvent_tmp(input.data, &input.avail)) {
         fprintf(stderr, "TpmSignalEvent_tmp failed \r\n");
       } else {
         // reuse `data` both for cmd and res buffer
-        if(!TpmOperationsLoop_tmp(&data, avail, &data, EXAMPLE_BUFFER_SIZE)) {
+        if(!TpmOperationsLoop_tmp(input.data, input.avail, &input.data, MAX_TPM_MESSAGE_SIZE)) {
           _Error_Handler(__FILE__, __LINE__);
         }
       }
 #else // ORIGINAL SIGNAL HANDLING
-      if (!TpmSignalEvent(&data, &avail)) {
+      if (!TpmSignalEvent(input.data, &input.avail)) {
         fprintf(stderr, "TpmSignalEvent_tmp failed \r\n");
       } else {
         // reuse `data` both for cmd and res buffer
