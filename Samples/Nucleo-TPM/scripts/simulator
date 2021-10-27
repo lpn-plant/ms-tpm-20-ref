@@ -1,10 +1,10 @@
 #!/usr/bin/python3
 
-import sys
+import sys, time
 sys.path.insert(1, './utils')
 
 from SerialEmulator import SerialEmulator
-from utils import wait_for_response
+from utils import wait_for_response, compare_cmd
 
 startup_cmd = b'\x80\x01\x00\x00\x00\x0c\x00\x00\x01{\x00\x08'
 startup_res = b'\x80\x01\00\x00\x00\x0a\x00\x00\x00\x00'
@@ -13,15 +13,20 @@ startup_res = b'\x80\x01\00\x00\x00\x0a\x00\x00\x00\x00'
 print("Creating serial emulator...")
 ser = SerialEmulator()
 
+print("Test application for use:")
+print("\ttpm2_startup -T device:/tmp/ttyclient")
+print("\ttpm2-tss_example")
+print("\ttpm2-pytss_example\n")
+
 print("Waiting for input command...")
 res = wait_for_response(ser)
 
-print("\tComparing command to reference...")
+print("\tComparing input to reference startup command...")
 compare_cmd(res, startup_cmd, "startup")
 
 print("\tReplying with startup response...")
 ser.write(startup_res)
-ser.write(startup_res)
+#ser.write(startup_res)
 
 #print("Waiting for input command...")
 #res = wait_for_response(ser)

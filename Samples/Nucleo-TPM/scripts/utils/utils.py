@@ -17,4 +17,4 @@ def compare_cmd(cmd, ref, name):
         print("\tValid {} command received.".format(name))
     else:
         print("\tInvalid {} command received.".format(name))
-        print(res)
+        print(cmd)
