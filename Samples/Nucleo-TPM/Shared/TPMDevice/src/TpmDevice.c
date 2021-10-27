@@ -1068,6 +1068,8 @@ bool TpmSignalEvent(uint8_t* Buf, uint32_t *Len)
                     return false;
                     break;
             }
+        } else {
+            itmPrint(ITMSIGNAL, "Invalid sig->s.magic (%x != %x).\r\n", sig->s.magic, SIGNALMAGIC);
         }
     }
     return true;
