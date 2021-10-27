@@ -165,6 +165,8 @@ int main(void)
     }
 
     if (avail != 0) {
+#define NEW_SIGNAL_HANDLING
+#ifdef NEW_SIGNAL_HANDLING
       if (!TpmSignalEvent_tmp(&data, &avail)) {
         fprintf(stderr, "TpmSignalEvent_tmp failed \r\n");
       } else {
@@ -173,6 +175,16 @@ int main(void)
           _Error_Handler(__FILE__, __LINE__);
         }
       }
+#else // ORIGINAL SIGNAL HANDLING
+      if (!TpmSignalEvent(&data, &avail)) {
+        fprintf(stderr, "TpmSignalEvent_tmp failed \r\n");
+      } else {
+        // reuse `data` both for cmd and res buffer
+        if(!TpmOperationsLoop()) {
+          _Error_Handler(__FILE__, __LINE__);
+        }
+      }
+#endif
     }
   }
   /* USER CODE END 3 */
