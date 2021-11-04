@@ -1,0 +1,6 @@
+# pycharm project files
+.idea
+
+# directory for storing rpi traces
+logs/
+
