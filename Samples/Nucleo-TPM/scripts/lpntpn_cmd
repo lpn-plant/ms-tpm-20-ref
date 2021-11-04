@@ -20,8 +20,11 @@ parser = argparse.ArgumentParser(description='Sends TPM commands over serial por
 parser.add_argument('--command',
                     default='startup',
                     choices=('startup', 'shutdown'),
-                    help='command (default: %(default)s)',
-                    required=True)
+                    help='command (default: %(default)s)')
+
+parser.add_argument('--port',
+                    default='/dev/ttyACM1',
+                    help='com port (default: %(default)s)')
 
 add_bool_arg(parser, 'legacy', default='--no-legacy',
              help_txt='legacy mode: VCOM application support')
@@ -48,13 +51,15 @@ else:
     print('running in non legacy mode...')
     output_cmd=b''
 
+print('on {} serial port...'.format(args.port))
+
 if args.command == 'startup':
     output_cmd += cmd_startup
 if args.command == 'shutdown':
     output_cmd += cmd_shutdown
 
 ser = serial.Serial(
-    port='/dev/ttyACM1',
+    port=args.port,
     baudrate=115200,
     parity=serial.PARITY_NONE,
     stopbits=serial.STOPBITS_TWO,
