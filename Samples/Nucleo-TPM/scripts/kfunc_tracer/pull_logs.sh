@@ -24,8 +24,8 @@ ssh $RASPI_IP dmesg | grep tpm_addr  | sed "s/^\[[ ]*\?\([0-9.]*\)\] \(.*\)/\\1 
 echo "collecting tpm related /proc/modules entries"
 ssh $RASPI_IP sudo cat /proc/modules | grep tpm > modules_addr.log
 
-
-ssh $RASPI_IP readelf -s /usr/lib/modules/5.10.76-v7+/kernel/drivers/char/tpm/tpm.ko | grep FUNC > tpm.log
-ssh $RASPI_IP readelf -s /usr/lib/modules/5.10.76-v7+/kernel/drivers/char/tpm/tpm_tis_core.ko | grep FUNC > tpm_tis_core.log
-ssh $RASPI_IP readelf -s /usr/lib/modules/5.10.76-v7+/kernel/drivers/char/tpm/tpm_tis_spi.ko | grep FUNC > tpm_tis_spi.log
+VERSION=$(ssh $RASPI_IP uname -r)
+ssh $RASPI_IP readelf -s /usr/lib/modules/$VERSION/kernel/drivers/char/tpm/tpm.ko | grep FUNC > tpm.log
+ssh $RASPI_IP readelf -s /usr/lib/modules/$VERSION/kernel/drivers/char/tpm/tpm_tis_core.ko | grep FUNC > tpm_tis_core.log
+ssh $RASPI_IP readelf -s /usr/lib/modules/$VERSION/kernel/drivers/char/tpm/tpm_tis_spi.ko | grep FUNC > tpm_tis_spi.log
 
