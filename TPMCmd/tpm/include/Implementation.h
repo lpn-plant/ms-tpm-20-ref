@@ -63,7 +63,8 @@
 #define FALSE               0
 #define YES                 1
 #define NO                  0
-#define SET                 1
+// FIXME: temporary workaround to make ms-tpm compile
+// #define SET                 1
 #define CLEAR               0
 
 // Table 0:1 - Defines for Processor Values

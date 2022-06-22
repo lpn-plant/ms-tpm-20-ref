@@ -1,0 +1,3 @@
+config TPM2_MS_REF
+  bool "Enable Microsoft reference TPM implementation library"
+  depends on WOLFSSL
