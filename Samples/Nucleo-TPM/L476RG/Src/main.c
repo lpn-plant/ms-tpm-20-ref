@@ -49,7 +49,6 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "stm32l4xx_hal.h"
-#include "usb_device.h"
 
 /* USER CODE BEGIN Includes */
 #include <stdint.h>
@@ -58,6 +57,7 @@
 #include "TpmDevice.h"
 #include "StmUtil.h"
 #include "cdc_data.h"
+#include "spi_utils.h"
 
 /* USER CODE END Includes */
 
@@ -65,6 +65,8 @@
 RNG_HandleTypeDef hrng;
 
 RTC_HandleTypeDef hrtc;
+
+//SPI_HandleTypeDef hspi2;
 
 UART_HandleTypeDef huart2;
 
@@ -79,14 +81,19 @@ static void MX_GPIO_Init(void);
 static void MX_RNG_Init(void);
 static void MX_RTC_Init(void);
 static void MX_USART2_UART_Init(void);
+// static void MX_SPI2_Init(void);
 
 /* USER CODE BEGIN PFP */
+uint8_t rx_spi_buff[512] = {0};
+uint8_t tx_spi_buff[512] = {0};
 /* Private function prototypes -----------------------------------------------*/
 #define CPU_CORE_FREQUENCY_HZ 800000000 /* CPU core frequency in Hz */
 void SWO_Init(uint32_t portBits, uint32_t cpuCoreFreqHz);
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
+
+
 
 /* USER CODE END 0 */
 
@@ -122,7 +129,7 @@ int main(void)
   MX_RNG_Init();
   MX_RTC_Init();
   MX_USART2_UART_Init();
-  MX_USB_DEVICE_Init();
+  MX_SPI2_Init();
   /* USER CODE BEGIN 2 */
   InitializeITM();
   fprintf(stderr, "\r\n\r\n=========================\r\n"
