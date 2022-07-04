@@ -2,8 +2,10 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <time.h>
+#include <string.h>
 #include "stm32l4xx_hal.h"
 #include "StmUtil.h"
+#include "main.h"
 
 // RTC initialized by MX_RTC_Init
 extern RTC_HandleTypeDef hrtc;

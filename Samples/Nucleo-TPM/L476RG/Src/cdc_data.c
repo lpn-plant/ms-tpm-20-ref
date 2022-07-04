@@ -9,6 +9,7 @@
 #include "circular_buffer.h"
 #include "stm32l4xx_hal.h"
 #include "TpmDevice.h"
+#include <stdio.h>
 
 #define CMD_MAX_BUFFER_SIZE 256
 
