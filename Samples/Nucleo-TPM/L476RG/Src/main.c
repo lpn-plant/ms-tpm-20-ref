@@ -115,6 +115,7 @@ int main(void)
   MX_USART2_UART_Init();
   MX_USB_DEVICE_Init();
   MX_SPI2_Init();
+  HAL_FLASH_Unlock();
   /* USER CODE BEGIN 2 */
   InitializeITM();
   fprintf(stderr, "\r\n\r\n=========================\r\n"
@@ -122,11 +123,11 @@ int main(void)
                           "=========================\r\n");
   printf("Nucleo-L476RG TPM 2.0\r\n");
 
-  /*if(!TpmInitializeDevice())
+  if(!TpmInitializeDevice())
   {
       //_Error_Handler(__FILE__, __LINE__);
 	  Error_Handler();
-  }*/
+  }
 
   /* USER CODE END 2 */
 
@@ -139,41 +140,37 @@ int main(void)
     /* USER CODE BEGIN 3 */
 	HAL_StatusTypeDef r = spi_receive(2);
 	if (r != HAL_OK) {
-		fprintf(stderr, "SPI receive failed: %d\n", r);
+		fprintf(stderr, "SPI receive failed (stage 1): %d\n", r);
 		continue;
 	}
 
-	uint16_t total_size = (uint16_t)rx_spi_buf[0] | (((uint16_t)rx_spi_buf[1]) << 8);
+	uint16_t total_size = (uint16_t)rx_spi_buf[1] | (((uint16_t)rx_spi_buf[0]) << 8);
 	fprintf(stderr, "packet size: %d\n", total_size);
+	if (total_size == 0)
+		continue;
+	r = spi_receive(total_size);
+	if (r != HAL_OK) {
+		fprintf(stderr, "SPI receive failed (stage 2): %d\n", r);
+		continue;
+	}
 
-#if 0
-    HAL_Delay(500);
-    cdc_input_data input;
-    cdc_get_data(&input);
-
-    if (input.avail != 0) {
-#define NEW_SIGNAL_HANDLING
-#ifdef NEW_SIGNAL_HANDLING
-      if (!TpmSignalEvent_tmp(input.data, &input.avail)) {
-        fprintf(stderr, "TpmSignalEvent_tmp failed \r\n");
-      } else {
-        // reuse `data` both for cmd and res buffer
-        if(!TpmOperationsLoop_tmp(input.data, input.avail, &input.data, MAX_TPM_MESSAGE_SIZE)) {
-          _Error_Handler(__FILE__, __LINE__);
-        }
-      }
-#else // ORIGINAL SIGNAL HANDLING
-      if (!TpmSignalEvent(input.data, &input.avail)) {
-        fprintf(stderr, "TpmSignalEvent_tmp failed \r\n");
-      } else {
-        // reuse `data` both for cmd and res buffer
-        if(!TpmOperationsLoop()) {
-          _Error_Handler(__FILE__, __LINE__);
-        }
-      }
-#endif
-    }
-#endif
+	if(!TpmOperationsLoop_tmp(rx_spi_buf, total_size, tx_spi_buf, MAX_TPM_MESSAGE_SIZE)) {
+		fprintf(stderr, "TpmOperationsLoop_tmp failed\r\n");
+		Error_Handler();
+	}
+	/*uint32_t left = total_size;
+	while (left > 0) {
+		if (!TpmSignalEvent_tmp(rx_spi_buf, &left)) {
+			fprintf(stderr, "TpmSignalEvent_tmp failed \r\n");
+		}
+		else {
+			// reuse `data` both for cmd and res buffer
+			if(!TpmOperationsLoop_tmp(rx_spi_buf, left, &input.data, MAX_TPM_MESSAGE_SIZE)) {
+				fprintf(stderr, "TpmOperationsLoop_tmp failed\r\n");
+				Error_Handler();
+			}
+		}
+	}*/
   }
   /* USER CODE END 3 */
 }
