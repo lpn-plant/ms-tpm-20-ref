@@ -129,6 +129,8 @@ int main(void)
 	  Error_Handler();
   }
 
+  spi_main_loop();
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -138,43 +140,6 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	HAL_StatusTypeDef r = spi_receive(2);
-	if (r != HAL_OK) {
-		fprintf(stderr, "SPI receive failed (stage 1): %d\n", r);
-		continue;
-	}
-
-	uint32_t total_size = (uint16_t)rx_spi_buf[1] | (((uint16_t)rx_spi_buf[0]) << 8);
-	fprintf(stderr, "packet size: %lu\n", total_size);
-	if (total_size == 0)
-		continue;
-	r = spi_receive(total_size);
-	if (r != HAL_OK) {
-		fprintf(stderr, "SPI receive failed (stage 2): %d\n", r);
-		continue;
-	}
-
-	if (!TpmSignalEvent_tmp(rx_spi_buf, &total_size)) {
-		fprintf(stderr, "TpmSignalEvent_tmp failed \r\n");
-	} else {
-		if(!TpmOperationsLoop_tmp(rx_spi_buf, total_size, tx_spi_buf, MAX_TPM_MESSAGE_SIZE)) {
-			fprintf(stderr, "TpmOperationsLoop_tmp failed\r\n");
-			Error_Handler();
-		}
-	}
-	/*uint32_t left = total_size;
-	while (left > 0) {
-		if (!TpmSignalEvent_tmp(rx_spi_buf, &left)) {
-			fprintf(stderr, "TpmSignalEvent_tmp failed \r\n");
-		}
-		else {
-			// reuse `data` both for cmd and res buffer
-			if(!TpmOperationsLoop_tmp(rx_spi_buf, left, &input.data, MAX_TPM_MESSAGE_SIZE)) {
-				fprintf(stderr, "TpmOperationsLoop_tmp failed\r\n");
-				Error_Handler();
-			}
-		}
-	}*/
   }
   /* USER CODE END 3 */
 }
@@ -354,7 +319,7 @@ static void MX_SPI2_Init(void)
   hspi2.Init.DataSize = SPI_DATASIZE_8BIT;
   hspi2.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi2.Init.CLKPhase = SPI_PHASE_1EDGE;
-  hspi2.Init.NSS = SPI_NSS_SOFT;
+  hspi2.Init.NSS = SPI_NSS_HARD_INPUT;
   hspi2.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi2.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi2.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
