@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <ScratchFile FileVersion="3.0">
   <FileVersion>3.0</FileVersion>
   <Workspace>
@@ -13,7 +13,7 @@
     <Project>
       <ProjectName>Nucleo-L476RG</ProjectName>
       <ProjectNature>C</ProjectNature>
-      <Secure />
+      <Secure/>
       <filestoremove>
         <file>
           <name>usb_device.h</name>
@@ -39,9 +39,33 @@
         <file>
           <name>main.h</name>
         </file>
+        <file>
+          <name>Src/usb_device.c</name>
+        </file>
+        <file>
+          <name>Src/usbd_conf.c</name>
+        </file>
+        <file>
+          <name>Src/usbd_desc.c</name>
+        </file>
+        <file>
+          <name>Src/usbd_cdc_if.c</name>
+        </file>
+        <file>
+          <name>Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_core.c</name>
+        </file>
+        <file>
+          <name>Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ctlreq.c</name>
+        </file>
+        <file>
+          <name>Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ioreq.c</name>
+        </file>
+        <file>
+          <name>Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Src/usbd_cdc.c</name>
+        </file>
       </filestoremove>
       <sourceEntriesToRemove>
-        <sourceEntry />
+        <sourceEntry/>
       </sourceEntriesToRemove>
       <configs>
         <config>
@@ -52,13 +76,13 @@
           <cpucore>Arm Cortex-M4</cpucore>
           <fpu>SP</fpu>
           <memories>
-            <memory access="xrw" name="RAM" size="96" start="0x20000000" />
-            <memory access="xrw" name="RAM2" size="32" start="0x10000000" />
-            <memory access="rx" name="FLASH" size="1024" start="0x8000000" />
+            <memory access="xrw" name="RAM" size="96" start="0x20000000"/>
+            <memory access="xrw" name="RAM2" size="32" start="0x10000000"/>
+            <memory access="rx" name="FLASH" size="1024" start="0x8000000"/>
           </memories>
           <startup>/home/akowalski/STM32Cube/Repository/STM32Cube_FW_L4_V1.17.2/Drivers/CMSIS/Device\ST\STM32L4xx\Source\Templates\gcc\startup_stm32l476xx.s</startup>
           <LinkSettings>
-            <LinkAdditionalLibs />
+            <LinkAdditionalLibs/>
           </LinkSettings>
           <heapSize>0x200</heapSize>
           <stackSize>0xf000</stackSize>
@@ -66,37 +90,38 @@
           <debugprobe>swd</debugprobe>
           <optimization>3</optimization>
           <Aincludes>
-            <include />
+            <include/>
           </Aincludes>
-          <Adefines />
+          <Adefines/>
           <Cdefines>
             <define>USE_HAL_DRIVER</define>
             <define>STM32L476xx</define>
           </Cdefines>
-          <Ldefines />
+          <Ldefines/>
           <Cincludes>
             <include>Inc</include>
             <include>Drivers/STM32L4xx_HAL_Driver/Inc</include>
             <include>Drivers/STM32L4xx_HAL_Driver/Inc/Legacy</include>
-            <include>Middlewares/ST/STM32_USB_Device_Library/Core/Inc</include>
-            <include>Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc</include>
             <include>Drivers/CMSIS/Device/ST/STM32L4xx/Include</include>
             <include>Drivers/CMSIS/Include</include>
           </Cincludes>
           <definestoremove>
-            <Adefines />
+            <Adefines/>
             <Cdefines>
               <define>USE_FULL_LL_DRIVER</define>
               <define>MBEDTLS_CONFIG_FILE="mbedtls_config.h"</define>
               <define>USE_FULL_ASSERT=1U</define>
             </Cdefines>
-            <Ldefines />
+            <Ldefines/>
           </definestoremove>
           <inctoremove>
             <Aincludes>
-              <include />
+              <include/>
             </Aincludes>
-            <Cincludes />
+            <Cincludes>
+              <include>Middlewares/ST/STM32_USB_Device_Library/Core/Inc</include>
+              <include>Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc</include>
+            </Cincludes>
           </inctoremove>
         </config>
       </configs>
@@ -108,12 +133,8 @@
         <sourceEntry>
           <name>Drivers</name>
         </sourceEntry>
-        <sourceEntry>
-          <name>Middlewares</name>
-        </sourceEntry>
       </sourceEntries>
-      <Groups />
+      <Groups/>
     </Project>
   </Workspace>
 </ScratchFile>
-

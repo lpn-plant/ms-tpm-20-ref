@@ -18,10 +18,10 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "usb_device.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <time.h>
@@ -55,6 +55,8 @@ SPI_HandleTypeDef hspi2;
 
 UART_HandleTypeDef huart2;
 
+PCD_HandleTypeDef hpcd_USB_OTG_FS;
+
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
 
@@ -67,6 +69,7 @@ static void MX_RNG_Init(void);
 static void MX_RTC_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_SPI2_Init(void);
+static void MX_USB_OTG_FS_PCD_Init(void);
 /* USER CODE BEGIN PFP */
 uint8_t rx_spi_buff[512] = {0};
 uint8_t tx_spi_buff[512] = {0};
@@ -113,9 +116,8 @@ int main(void)
   MX_RNG_Init();
   MX_RTC_Init();
   MX_USART2_UART_Init();
-  MX_USB_DEVICE_Init();
   MX_SPI2_Init();
-  HAL_FLASH_Unlock();
+  MX_USB_OTG_FS_PCD_Init();
   /* USER CODE BEGIN 2 */
   InitializeITM();
   fprintf(stderr, "\r\n\r\n=========================\r\n"
@@ -144,8 +146,8 @@ int main(void)
 		continue;
 	}
 
-	uint16_t total_size = (uint16_t)rx_spi_buf[1] | (((uint16_t)rx_spi_buf[0]) << 8);
-	fprintf(stderr, "packet size: %d\n", total_size);
+	uint32_t total_size = (uint16_t)rx_spi_buf[1] | (((uint16_t)rx_spi_buf[0]) << 8);
+	fprintf(stderr, "packet size: %lu\n", total_size);
 	if (total_size == 0)
 		continue;
 	r = spi_receive(total_size);
@@ -154,9 +156,13 @@ int main(void)
 		continue;
 	}
 
-	if(!TpmOperationsLoop_tmp(rx_spi_buf, total_size, tx_spi_buf, MAX_TPM_MESSAGE_SIZE)) {
-		fprintf(stderr, "TpmOperationsLoop_tmp failed\r\n");
-		Error_Handler();
+	if (!TpmSignalEvent_tmp(rx_spi_buf, &total_size)) {
+		fprintf(stderr, "TpmSignalEvent_tmp failed \r\n");
+	} else {
+		if(!TpmOperationsLoop_tmp(rx_spi_buf, total_size, tx_spi_buf, MAX_TPM_MESSAGE_SIZE)) {
+			fprintf(stderr, "TpmOperationsLoop_tmp failed\r\n");
+			Error_Handler();
+		}
 	}
 	/*uint32_t left = total_size;
 	while (left > 0) {
@@ -350,7 +356,7 @@ static void MX_SPI2_Init(void)
   hspi2.Init.DataSize = SPI_DATASIZE_8BIT;
   hspi2.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi2.Init.CLKPhase = SPI_PHASE_1EDGE;
-  hspi2.Init.NSS = SPI_NSS_HARD_INPUT;
+  hspi2.Init.NSS = SPI_NSS_SOFT;
   hspi2.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi2.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi2.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
@@ -399,6 +405,41 @@ static void MX_USART2_UART_Init(void)
   /* USER CODE BEGIN USART2_Init 2 */
 
   /* USER CODE END USART2_Init 2 */
+
+}
+
+/**
+  * @brief USB_OTG_FS Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_USB_OTG_FS_PCD_Init(void)
+{
+
+  /* USER CODE BEGIN USB_OTG_FS_Init 0 */
+
+  /* USER CODE END USB_OTG_FS_Init 0 */
+
+  /* USER CODE BEGIN USB_OTG_FS_Init 1 */
+
+  /* USER CODE END USB_OTG_FS_Init 1 */
+  hpcd_USB_OTG_FS.Instance = USB_OTG_FS;
+  hpcd_USB_OTG_FS.Init.dev_endpoints = 6;
+  hpcd_USB_OTG_FS.Init.speed = PCD_SPEED_FULL;
+  hpcd_USB_OTG_FS.Init.phy_itface = PCD_PHY_EMBEDDED;
+  hpcd_USB_OTG_FS.Init.Sof_enable = DISABLE;
+  hpcd_USB_OTG_FS.Init.low_power_enable = DISABLE;
+  hpcd_USB_OTG_FS.Init.lpm_enable = DISABLE;
+  hpcd_USB_OTG_FS.Init.battery_charging_enable = DISABLE;
+  hpcd_USB_OTG_FS.Init.use_dedicated_ep1 = DISABLE;
+  hpcd_USB_OTG_FS.Init.vbus_sensing_enable = DISABLE;
+  if (HAL_PCD_Init(&hpcd_USB_OTG_FS) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN USB_OTG_FS_Init 2 */
+
+  /* USER CODE END USB_OTG_FS_Init 2 */
 
 }
 
