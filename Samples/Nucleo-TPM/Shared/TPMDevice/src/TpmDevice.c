@@ -694,6 +694,9 @@ bool TpmInitializeDevice(void)
     {
         logError("_plat__Signal_PowerOn() failed.\r\n");
     }
+    // Clear power loss flag to prevent _TPM_Init from erasing important state.
+    // Otherwise TPM startup won't work.
+    _plat__WasPowerLost();
     dbgPrint("_plat__Signal_Reset().\r\n");
     if((retVal =_plat__Signal_Reset()) != 0)
     {
