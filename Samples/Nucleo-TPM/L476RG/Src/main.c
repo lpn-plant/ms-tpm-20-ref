@@ -27,7 +27,6 @@
 #include <time.h>
 #include "TpmDevice.h"
 #include "StmUtil.h"
-#include "cdc_data.h"
 #include "spi_utils.h"
 
 /* USER CODE END Includes */
@@ -101,7 +100,6 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
-  cdc_buffer_init();
   /* USER CODE END Init */
 
   /* Configure the system clock */
