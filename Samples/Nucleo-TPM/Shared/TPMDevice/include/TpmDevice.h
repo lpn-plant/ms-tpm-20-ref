@@ -1,3 +1,5 @@
+#include <time.h>
+
 #define SIGNALMAGIC (0x326d7054) //Tpm2
 #define MAX_TPM_MESSAGE_SIZE (sizeof(unsigned int) + 2048)
 

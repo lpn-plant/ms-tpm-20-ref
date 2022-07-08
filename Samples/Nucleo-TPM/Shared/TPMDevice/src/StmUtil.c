@@ -2,9 +2,10 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <time.h>
+#include <string.h>
 #include "stm32l4xx_hal.h"
-#include "usb_device.h"
 #include "StmUtil.h"
+#include "main.h"
 
 // RTC initialized by MX_RTC_Init
 extern RTC_HandleTypeDef hrtc;
@@ -89,12 +90,6 @@ char* GetLogStamp(void)
                 time.Seconds,
                 (int)((1000 / time.SecondFraction) * (time.SecondFraction - time.SubSeconds)));
     return logStampStr;
-}
-
-void KillUSBLink(void)
-{
-    dbgPrint("USB de-initialization...\r\n");
-    MX_USB_DEVICE_DeInit();
 }
 
 void SetRealTimeClock(time_t tm)

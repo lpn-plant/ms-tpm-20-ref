@@ -1,72 +1,60 @@
-
+/* USER CODE BEGIN Header */
 /**
   ******************************************************************************
   * @file           : main.c
   * @brief          : Main program body
   ******************************************************************************
-  * This notice applies to any and all portions of this file
-  * that are not between comment pairs USER CODE BEGIN and
-  * USER CODE END. Other portions of this file, whether 
-  * inserted by the user or by software development tools
-  * are owned by their respective copyright owners.
+  * @attention
   *
-  * Copyright (c) 2018 STMicroelectronics International N.V. 
+  * Copyright (c) 2022 STMicroelectronics.
   * All rights reserved.
   *
-  * Redistribution and use in source and binary forms, with or without 
-  * modification, are permitted, provided that the following conditions are met:
-  *
-  * 1. Redistribution of source code must retain the above copyright notice, 
-  *    this list of conditions and the following disclaimer.
-  * 2. Redistributions in binary form must reproduce the above copyright notice,
-  *    this list of conditions and the following disclaimer in the documentation
-  *    and/or other materials provided with the distribution.
-  * 3. Neither the name of STMicroelectronics nor the names of other 
-  *    contributors to this software may be used to endorse or promote products 
-  *    derived from this software without specific written permission.
-  * 4. This software, including modifications and/or derivative works of this 
-  *    software, must execute solely and exclusively on microcontroller or
-  *    microprocessor devices manufactured by or for STMicroelectronics.
-  * 5. Redistribution and use of this software other than as permitted under 
-  *    this license is void and will automatically terminate your rights under 
-  *    this license. 
-  *
-  * THIS SOFTWARE IS PROVIDED BY STMICROELECTRONICS AND CONTRIBUTORS "AS IS" 
-  * AND ANY EXPRESS, IMPLIED OR STATUTORY WARRANTIES, INCLUDING, BUT NOT 
-  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A 
-  * PARTICULAR PURPOSE AND NON-INFRINGEMENT OF THIRD PARTY INTELLECTUAL PROPERTY
-  * RIGHTS ARE DISCLAIMED TO THE FULLEST EXTENT PERMITTED BY LAW. IN NO EVENT 
-  * SHALL STMICROELECTRONICS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-  * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-  * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, 
-  * OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF 
-  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
-  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
-  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is provided AS-IS.
   *
   ******************************************************************************
   */
+/* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "stm32l4xx_hal.h"
-#include "usb_device.h"
 
+/* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <time.h>
 #include "TpmDevice.h"
 #include "StmUtil.h"
-#include "cdc_data.h"
+#include "spi_utils.h"
 
 /* USER CODE END Includes */
+
+/* Private typedef -----------------------------------------------------------*/
+/* USER CODE BEGIN PTD */
+
+/* USER CODE END PTD */
+
+/* Private define ------------------------------------------------------------*/
+/* USER CODE BEGIN PD */
+/* USER CODE END PD */
+
+/* Private macro -------------------------------------------------------------*/
+/* USER CODE BEGIN PM */
+
+/* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
 RNG_HandleTypeDef hrng;
 
 RTC_HandleTypeDef hrtc;
 
+SPI_HandleTypeDef hspi2;
+
 UART_HandleTypeDef huart2;
+
+PCD_HandleTypeDef hpcd_USB_OTG_FS;
 
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
@@ -79,21 +67,26 @@ static void MX_GPIO_Init(void);
 static void MX_RNG_Init(void);
 static void MX_RTC_Init(void);
 static void MX_USART2_UART_Init(void);
-
+static void MX_SPI2_Init(void);
+static void MX_USB_OTG_FS_PCD_Init(void);
 /* USER CODE BEGIN PFP */
+uint8_t rx_spi_buff[512] = {0};
+uint8_t tx_spi_buff[512] = {0};
 /* Private function prototypes -----------------------------------------------*/
 #define CPU_CORE_FREQUENCY_HZ 800000000 /* CPU core frequency in Hz */
 void SWO_Init(uint32_t portBits, uint32_t cpuCoreFreqHz);
 /* USER CODE END PFP */
 
+/* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+
 
 /* USER CODE END 0 */
 
 /**
   * @brief  The application entry point.
-  *
-  * @retval None
+  * @retval int
   */
 int main(void)
 {
@@ -101,13 +94,12 @@ int main(void)
 
   /* USER CODE END 1 */
 
-  /* MCU Configuration----------------------------------------------------------*/
+  /* MCU Configuration--------------------------------------------------------*/
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   HAL_Init();
 
   /* USER CODE BEGIN Init */
-  cdc_buffer_init();
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -122,7 +114,8 @@ int main(void)
   MX_RNG_Init();
   MX_RTC_Init();
   MX_USART2_UART_Init();
-  MX_USB_DEVICE_Init();
+  MX_SPI2_Init();
+  MX_USB_OTG_FS_PCD_Init();
   /* USER CODE BEGIN 2 */
   InitializeITM();
   fprintf(stderr, "\r\n\r\n=========================\r\n"
@@ -132,8 +125,11 @@ int main(void)
 
   if(!TpmInitializeDevice())
   {
-      _Error_Handler(__FILE__, __LINE__);
+      //_Error_Handler(__FILE__, __LINE__);
+	  Error_Handler();
   }
+
+  spi_main_loop();
 
   /* USER CODE END 2 */
 
@@ -141,39 +137,11 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+    /* USER CODE END WHILE */
 
-  /* USER CODE END WHILE */
-
-  /* USER CODE BEGIN 3 */
-    HAL_Delay(500);
-    cdc_input_data input;
-    cdc_get_data(&input);
-
-    if (input.avail != 0) {
-#define NEW_SIGNAL_HANDLING
-#ifdef NEW_SIGNAL_HANDLING
-      if (!TpmSignalEvent_tmp(input.data, &input.avail)) {
-        fprintf(stderr, "TpmSignalEvent_tmp failed \r\n");
-      } else {
-        // reuse `data` both for cmd and res buffer
-        if(!TpmOperationsLoop_tmp(input.data, input.avail, &input.data, MAX_TPM_MESSAGE_SIZE)) {
-          _Error_Handler(__FILE__, __LINE__);
-        }
-      }
-#else // ORIGINAL SIGNAL HANDLING
-      if (!TpmSignalEvent(input.data, &input.avail)) {
-        fprintf(stderr, "TpmSignalEvent_tmp failed \r\n");
-      } else {
-        // reuse `data` both for cmd and res buffer
-        if(!TpmOperationsLoop()) {
-          _Error_Handler(__FILE__, __LINE__);
-        }
-      }
-#endif
-    }
+    /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
-
 }
 
 /**
@@ -182,41 +150,46 @@ int main(void)
   */
 void SystemClock_Config(void)
 {
+  RCC_OscInitTypeDef RCC_OscInitStruct = {0};
+  RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
 
-  RCC_OscInitTypeDef RCC_OscInitStruct;
-  RCC_ClkInitTypeDef RCC_ClkInitStruct;
-  RCC_PeriphCLKInitTypeDef PeriphClkInit;
+  /** Configure the main internal regulator output voltage
+  */
+  if (HAL_PWREx_ControlVoltageScaling(PWR_REGULATOR_VOLTAGE_SCALE1) != HAL_OK)
+  {
+    Error_Handler();
+  }
 
-    /**Configure LSE Drive Capability 
-    */
+  /** Configure LSE Drive Capability
+  */
   HAL_PWR_EnableBkUpAccess();
-
   __HAL_RCC_LSEDRIVE_CONFIG(RCC_LSEDRIVE_LOW);
 
-    /**Initializes the CPU, AHB and APB busses clocks 
-    */
+  /** Initializes the RCC Oscillators according to the specified parameters
+  * in the RCC_OscInitTypeDef structure.
+  */
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI|RCC_OSCILLATORTYPE_LSE
                               |RCC_OSCILLATORTYPE_MSI;
   RCC_OscInitStruct.LSEState = RCC_LSE_ON;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
-  RCC_OscInitStruct.HSICalibrationValue = 16;
+  RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
   RCC_OscInitStruct.MSIState = RCC_MSI_ON;
   RCC_OscInitStruct.MSICalibrationValue = 0;
   RCC_OscInitStruct.MSIClockRange = RCC_MSIRANGE_11;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
-  RCC_OscInitStruct.PLL.PLLM = 1;  // <-- This one gets dropped by V1.11.0 add me manually back in when CubeMX ran
+  RCC_OscInitStruct.PLL.PLLM = 1;
   RCC_OscInitStruct.PLL.PLLN = 10;
   RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV7;
   RCC_OscInitStruct.PLL.PLLQ = RCC_PLLQ_DIV2;
   RCC_OscInitStruct.PLL.PLLR = RCC_PLLR_DIV2;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
-    _Error_Handler(__FILE__, __LINE__);
+    Error_Handler();
   }
 
-    /**Initializes the CPU, AHB and APB busses clocks 
-    */
+  /** Initializes the CPU, AHB and APB buses clocks
+  */
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
@@ -226,66 +199,62 @@ void SystemClock_Config(void)
 
   if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_4) != HAL_OK)
   {
-    _Error_Handler(__FILE__, __LINE__);
+    Error_Handler();
   }
 
-  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_RTC|RCC_PERIPHCLK_USART2
-                              |RCC_PERIPHCLK_USB|RCC_PERIPHCLK_RNG;
-  PeriphClkInit.Usart2ClockSelection = RCC_USART2CLKSOURCE_PCLK1;
-  PeriphClkInit.RTCClockSelection = RCC_RTCCLKSOURCE_LSE;
-  PeriphClkInit.UsbClockSelection = RCC_USBCLKSOURCE_MSI;
-  PeriphClkInit.RngClockSelection = RCC_RNGCLKSOURCE_MSI;
-  if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
-  {
-    _Error_Handler(__FILE__, __LINE__);
-  }
-
-    /**Configure the main internal regulator output voltage 
-    */
-  if (HAL_PWREx_ControlVoltageScaling(PWR_REGULATOR_VOLTAGE_SCALE1) != HAL_OK)
-  {
-    _Error_Handler(__FILE__, __LINE__);
-  }
-
-    /**Configure the Systick interrupt time 
-    */
-  HAL_SYSTICK_Config(HAL_RCC_GetHCLKFreq()/1000);
-
-    /**Configure the Systick 
-    */
-  HAL_SYSTICK_CLKSourceConfig(SYSTICK_CLKSOURCE_HCLK);
-
-    /**Enable MSI Auto calibration 
-    */
+  /** Enable MSI Auto calibration
+  */
   HAL_RCCEx_EnableMSIPLLMode();
-
-  /* SysTick_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(SysTick_IRQn, 0, 0);
 }
 
-/* RNG init function */
+/**
+  * @brief RNG Initialization Function
+  * @param None
+  * @retval None
+  */
 static void MX_RNG_Init(void)
 {
 
+  /* USER CODE BEGIN RNG_Init 0 */
+
+  /* USER CODE END RNG_Init 0 */
+
+  /* USER CODE BEGIN RNG_Init 1 */
+
+  /* USER CODE END RNG_Init 1 */
   hrng.Instance = RNG;
   if (HAL_RNG_Init(&hrng) != HAL_OK)
   {
-    _Error_Handler(__FILE__, __LINE__);
+    Error_Handler();
   }
+  /* USER CODE BEGIN RNG_Init 2 */
+
+  /* USER CODE END RNG_Init 2 */
 
 }
 
-/* RTC init function */
+/**
+  * @brief RTC Initialization Function
+  * @param None
+  * @retval None
+  */
 static void MX_RTC_Init(void)
 {
 
-  RTC_TimeTypeDef sTime;
-  RTC_DateTypeDef sDate;
+  /* USER CODE BEGIN RTC_Init 0 */
 
-    /**Initialize RTC Only 
-    */
+  /* USER CODE END RTC_Init 0 */
+
+  RTC_TimeTypeDef sTime = {0};
+  RTC_DateTypeDef sDate = {0};
+
+  /* USER CODE BEGIN RTC_Init 1 */
+
+  /* USER CODE END RTC_Init 1 */
+
+  /** Initialize RTC Only
+  */
   hrtc.Instance = RTC;
-if(HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR0) != 0x32F2){
   hrtc.Init.HourFormat = RTC_HOURFORMAT_24;
   hrtc.Init.AsynchPrediv = 127;
   hrtc.Init.SynchPrediv = 255;
@@ -295,11 +264,15 @@ if(HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR0) != 0x32F2){
   hrtc.Init.OutPutType = RTC_OUTPUT_TYPE_OPENDRAIN;
   if (HAL_RTC_Init(&hrtc) != HAL_OK)
   {
-    _Error_Handler(__FILE__, __LINE__);
+    Error_Handler();
   }
 
-    /**Initialize RTC and set the Time and Date 
-    */
+  /* USER CODE BEGIN Check_RTC_BKUP */
+
+  /* USER CODE END Check_RTC_BKUP */
+
+  /** Initialize RTC and set the Time and Date
+  */
   sTime.Hours = 0;
   sTime.Minutes = 0;
   sTime.Seconds = 0;
@@ -307,9 +280,8 @@ if(HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR0) != 0x32F2){
   sTime.StoreOperation = RTC_STOREOPERATION_RESET;
   if (HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BIN) != HAL_OK)
   {
-    _Error_Handler(__FILE__, __LINE__);
+    Error_Handler();
   }
-
   sDate.WeekDay = RTC_WEEKDAY_MONDAY;
   sDate.Month = RTC_MONTH_JANUARY;
   sDate.Date = 1;
@@ -317,18 +289,68 @@ if(HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR0) != 0x32F2){
 
   if (HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BIN) != HAL_OK)
   {
-    _Error_Handler(__FILE__, __LINE__);
+    Error_Handler();
   }
+  /* USER CODE BEGIN RTC_Init 2 */
 
-    HAL_RTCEx_BKUPWrite(&hrtc,RTC_BKP_DR0,0x32F2);
-  }
+  /* USER CODE END RTC_Init 2 */
 
 }
 
-/* USART2 init function */
+/**
+  * @brief SPI2 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_SPI2_Init(void)
+{
+
+  /* USER CODE BEGIN SPI2_Init 0 */
+
+  /* USER CODE END SPI2_Init 0 */
+
+  /* USER CODE BEGIN SPI2_Init 1 */
+
+  /* USER CODE END SPI2_Init 1 */
+  /* SPI2 parameter configuration*/
+  hspi2.Instance = SPI2;
+  hspi2.Init.Mode = SPI_MODE_SLAVE;
+  hspi2.Init.Direction = SPI_DIRECTION_2LINES;
+  hspi2.Init.DataSize = SPI_DATASIZE_8BIT;
+  hspi2.Init.CLKPolarity = SPI_POLARITY_LOW;
+  hspi2.Init.CLKPhase = SPI_PHASE_1EDGE;
+  hspi2.Init.NSS = SPI_NSS_HARD_INPUT;
+  hspi2.Init.FirstBit = SPI_FIRSTBIT_MSB;
+  hspi2.Init.TIMode = SPI_TIMODE_DISABLE;
+  hspi2.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
+  hspi2.Init.CRCPolynomial = 7;
+  hspi2.Init.CRCLength = SPI_CRC_LENGTH_DATASIZE;
+  hspi2.Init.NSSPMode = SPI_NSS_PULSE_DISABLE;
+  if (HAL_SPI_Init(&hspi2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN SPI2_Init 2 */
+
+  /* USER CODE END SPI2_Init 2 */
+
+}
+
+/**
+  * @brief USART2 Initialization Function
+  * @param None
+  * @retval None
+  */
 static void MX_USART2_UART_Init(void)
 {
 
+  /* USER CODE BEGIN USART2_Init 0 */
+
+  /* USER CODE END USART2_Init 0 */
+
+  /* USER CODE BEGIN USART2_Init 1 */
+
+  /* USER CODE END USART2_Init 1 */
   huart2.Instance = USART2;
   huart2.Init.BaudRate = 115200;
   huart2.Init.WordLength = UART_WORDLENGTH_8B;
@@ -341,22 +363,57 @@ static void MX_USART2_UART_Init(void)
   huart2.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
   if (HAL_UART_Init(&huart2) != HAL_OK)
   {
-    _Error_Handler(__FILE__, __LINE__);
+    Error_Handler();
   }
+  /* USER CODE BEGIN USART2_Init 2 */
+
+  /* USER CODE END USART2_Init 2 */
 
 }
 
-/** Configure pins as 
-        * Analog 
-        * Input 
-        * Output
-        * EVENT_OUT
-        * EXTI
-*/
-static void MX_GPIO_Init(void)
+/**
+  * @brief USB_OTG_FS Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_USB_OTG_FS_PCD_Init(void)
 {
 
-  GPIO_InitTypeDef GPIO_InitStruct;
+  /* USER CODE BEGIN USB_OTG_FS_Init 0 */
+
+  /* USER CODE END USB_OTG_FS_Init 0 */
+
+  /* USER CODE BEGIN USB_OTG_FS_Init 1 */
+
+  /* USER CODE END USB_OTG_FS_Init 1 */
+  hpcd_USB_OTG_FS.Instance = USB_OTG_FS;
+  hpcd_USB_OTG_FS.Init.dev_endpoints = 6;
+  hpcd_USB_OTG_FS.Init.speed = PCD_SPEED_FULL;
+  hpcd_USB_OTG_FS.Init.phy_itface = PCD_PHY_EMBEDDED;
+  hpcd_USB_OTG_FS.Init.Sof_enable = DISABLE;
+  hpcd_USB_OTG_FS.Init.low_power_enable = DISABLE;
+  hpcd_USB_OTG_FS.Init.lpm_enable = DISABLE;
+  hpcd_USB_OTG_FS.Init.battery_charging_enable = DISABLE;
+  hpcd_USB_OTG_FS.Init.use_dedicated_ep1 = DISABLE;
+  hpcd_USB_OTG_FS.Init.vbus_sensing_enable = DISABLE;
+  if (HAL_PCD_Init(&hpcd_USB_OTG_FS) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN USB_OTG_FS_Init 2 */
+
+  /* USER CODE END USB_OTG_FS_Init 2 */
+
+}
+
+/**
+  * @brief GPIO Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_GPIO_Init(void)
+{
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOC_CLK_ENABLE();
@@ -388,14 +445,13 @@ static void MX_GPIO_Init(void)
 
 /**
   * @brief  This function is executed in case of error occurrence.
-  * @param  file: The file name as string.
-  * @param  line: The line in file as a number.
   * @retval None
   */
-void _Error_Handler(char *file, int line)
+void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
-  dbgPrint("PANIC: EXECUTION HALTED %s@%d\r\n", file, line);
+  //dbgPrint("PANIC: EXECUTION HALTED %s@%d\r\n", file, line);
+	dbgPrint("PANIC: EXECUTION HALTED\r\n");
   /* User can add his own implementation to report the HAL error return state */
   while(1)
   {
@@ -411,21 +467,11 @@ void _Error_Handler(char *file, int line)
   * @param  line: assert_param error line source number
   * @retval None
   */
-void assert_failed(uint8_t* file, uint32_t line)
-{ 
+void assert_failed(uint8_t *file, uint32_t line)
+{
   /* USER CODE BEGIN 6 */
   /* User can add his own implementation to report the file name and line number,
      tex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */
-
-/**
-  * @}
-  */
-
-/**
-  * @}
-  */
-
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
