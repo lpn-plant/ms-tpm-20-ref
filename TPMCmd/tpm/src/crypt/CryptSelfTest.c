@@ -141,7 +141,7 @@ CryptIncrementalSelfTest(
             // make sure that the algorithm value is not out of range
             if((alg > TPM_ALG_LAST) || !TEST_BIT(alg, g_implementedAlgorithms))
                 return TPM_RC_VALUE;
-            SET_BIT(alg, toTestVector);
+            MS_TPM_SET_BIT(alg, toTestVector);
         }
         // Run the test
         if(CryptRunSelfTests(&toTestVector) == TPM_RC_CANCELED)
@@ -213,9 +213,9 @@ CryptTestAlgorithm(
     // algorithms have tests, 'toTest' can be cleared.
     if(alg != TPM_ALG_ERROR)
     {
-        CLEAR_BIT(alg, g_toTest);
+        MS_TPM_CLEAR_BIT(alg, g_toTest);
         if(toTest != NULL)
-            CLEAR_BIT(alg, *toTest);
+            MS_TPM_CLEAR_BIT(alg, *toTest);
     }
     result = TPM_RC_SUCCESS;
 #endif

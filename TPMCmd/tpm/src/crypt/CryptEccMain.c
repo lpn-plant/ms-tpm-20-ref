@@ -366,7 +366,7 @@ CryptCommit(
 {
     UINT16      oldCount = (UINT16)gr.commitCounter;
     gr.commitCounter++;
-    SET_BIT(oldCount & COMMIT_INDEX_MASK, gr.commitArray);
+    MS_TPM_SET_BIT(oldCount & COMMIT_INDEX_MASK, gr.commitArray);
     return oldCount;
 }
 

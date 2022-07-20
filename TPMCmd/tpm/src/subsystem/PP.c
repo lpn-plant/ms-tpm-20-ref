@@ -66,7 +66,7 @@ PhysicalPresencePreInstall_Init(
     {
         if(s_commandAttributes[commandIndex] & IS_IMPLEMENTED
            &&  s_commandAttributes[commandIndex] & PP_REQUIRED)
-            SET_BIT(commandIndex, gp.ppList);
+            MS_TPM_SET_BIT(commandIndex, gp.ppList);
     }
     // Write PP list to NV
     NV_SYNC_PERSISTENT(ppList);
@@ -89,7 +89,7 @@ PhysicalPresenceCommandSet(
 
     // only set the bit if this is a command for which PP is allowed
     if(s_commandAttributes[commandIndex] & PP_COMMAND)
-        SET_BIT(commandIndex, gp.ppList);
+        MS_TPM_SET_BIT(commandIndex, gp.ppList);
     return;
 }
 
@@ -109,7 +109,7 @@ PhysicalPresenceCommandClear(
 
     // Only clear the bit if the command does not require PP
     if((s_commandAttributes[commandIndex] & PP_REQUIRED) == 0)
-        CLEAR_BIT(commandIndex, gp.ppList);
+        MS_TPM_CLEAR_BIT(commandIndex, gp.ppList);
 
     return;
 }
