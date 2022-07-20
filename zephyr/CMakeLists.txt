@@ -2,6 +2,7 @@ if (CONFIG_TPM2_MS_REF)
     add_subdirectory(${ZEPHYR_CURRENT_MODULE_DIR}/zephyr/platform)
 
     zephyr_library_named(ms-tpm-20-ref)
+    zephyr_library_compile_options(-Wno-expansion-to-defined -Wno-missing-braces)
     target_include_directories(
         ms-tpm-20-ref PUBLIC ${ZEPHYR_CURRENT_MODULE_DIR}/TPMCmd/tpm/include ${ZEPHYR_CURRENT_MODULE_DIR}/TPMCmd/tpm/include/prototypes
     )
