@@ -117,7 +117,7 @@ CommandAuditSet(
             if(!TEST_BIT(commandIndex, gp.auditCommands))
             {
                 // Set bit
-                SET_BIT(commandIndex, gp.auditCommands);
+                MS_TPM_SET_BIT(commandIndex, gp.auditCommands);
                 return TRUE;
             }
         }
@@ -154,7 +154,7 @@ CommandAuditClear(
             if(TEST_BIT(commandIndex, gp.auditCommands))
             {
                 // Clear bit
-                CLEAR_BIT(commandIndex, gp.auditCommands);
+                MS_TPM_CLEAR_BIT(commandIndex, gp.auditCommands);
                 return TRUE;
             }
         }

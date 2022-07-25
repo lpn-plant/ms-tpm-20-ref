@@ -227,6 +227,6 @@ AlgorithmGetImplementedVector(
     for(index = (sizeof(s_algorithms) / sizeof(s_algorithms[0])) - 1;
     index >= 0;
         index--)
-        SET_BIT(s_algorithms[index].algID, *implemented);
+        MS_TPM_SET_BIT(s_algorithms[index].algID, *implemented);
     return;
 }
