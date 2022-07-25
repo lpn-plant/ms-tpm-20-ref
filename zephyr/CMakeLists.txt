@@ -7,7 +7,7 @@ if (CONFIG_TPM2_MS_REF)
         ms-tpm-20-ref PUBLIC ${ZEPHYR_CURRENT_MODULE_DIR}/TPMCmd/tpm/include ${ZEPHYR_CURRENT_MODULE_DIR}/TPMCmd/tpm/include/prototypes
     )
     target_compile_definitions(
-        ms-tpm-20-ref PRIVATE USE_WOLFCRYPT
+        ms-tpm-20-ref PRIVATE USE_WOLFCRYPT SIMULATION=NO
     )
     zephyr_library_sources(
         ${ZEPHYR_CURRENT_MODULE_DIR}/TPMCmd/tpm/src/command/Ecdaa/Commit.c
