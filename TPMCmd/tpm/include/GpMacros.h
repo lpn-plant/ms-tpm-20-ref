@@ -161,8 +161,8 @@
 // These are defined for use when the size of the vector being checked is known
 // at compile time.
 #define TEST_BIT(bit, vector)   TestBit((bit), (BYTE *)&(vector), sizeof(vector))
-#define SET_BIT(bit, vector)    SetBit((bit), (BYTE *)&(vector), sizeof(vector))
-#define CLEAR_BIT(bit, vector) ClearBit((bit), (BYTE *)&(vector), sizeof(vector))
+#define MS_TPM_SET_BIT(bit, vector)    SetBit((bit), (BYTE *)&(vector), sizeof(vector))
+#define MS_TPM_CLEAR_BIT(bit, vector) ClearBit((bit), (BYTE *)&(vector), sizeof(vector))
 
 
 // The following definitions are used if they have not already been defined. The
@@ -181,7 +181,7 @@
 #define STD_RESPONSE_HEADER (sizeof(TPM_ST) + sizeof(UINT32) + sizeof(TPM_RC))
 
 #define JOIN(x,y) x##y
-#define CONCAT(x,y) JOIN(x, y)
+#define MS_TPM_CONCAT(x,y) JOIN(x, y)
 
 // If CONTEXT_INTEGRITY_HASH_ALG is defined, then the vendor is using the old style
 // table. Otherwise, pick the "strongest" implemented hash algorithm as the context
@@ -198,11 +198,11 @@
 #   elif defined ALG_SHA1 && ALG_SHA1 == YES
 #       define CONTEXT_HASH_ALGORITHM  SHA1  
 #   endif
-#   define CONTEXT_INTEGRITY_HASH_ALG  CONCAT(TPM_ALG_, CONTEXT_HASH_ALGORITHM)
+#   define CONTEXT_INTEGRITY_HASH_ALG  MS_TPM_CONCAT(TPM_ALG_, CONTEXT_HASH_ALGORITHM)
 #endif
 
 #ifndef CONTEXT_INTEGRITY_HASH_SIZE
-#define CONTEXT_INTEGRITY_HASH_SIZE CONCAT(CONTEXT_HASH_ALGORITHM, _DIGEST_SIZE)
+#define CONTEXT_INTEGRITY_HASH_SIZE MS_TPM_CONCAT(CONTEXT_HASH_ALGORITHM, _DIGEST_SIZE)
 #endif
 
 #ifdef TPM_ALG_RSA
@@ -271,9 +271,9 @@
 
 // If CONTEXT_ENCRYP_ALG is defined, then the vendor is using the old style table
 #ifndef CONTEXT_ENCRYPT_ALG
-#define CONTEXT_ENCRYPT_ALG             CONCAT(TPM_ALG_, CONTEXT_ENCRYPT_ALGORITHM)
+#define CONTEXT_ENCRYPT_ALG             MS_TPM_CONCAT(TPM_ALG_, CONTEXT_ENCRYPT_ALGORITHM)
 #define CONTEXT_ENCRYPT_KEY_BITS                            \
-                CONCAT(CONCAT(MAX_, CONTEXT_ENCRYPT_ALGORITHM), _KEY_BITS)
+                MS_TPM_CONCAT(MS_TPM_CONCAT(MAX_, CONTEXT_ENCRYPT_ALGORITHM), _KEY_BITS)
 #define CONTEXT_ENCRYPT_KEY_BYTES       ((CONTEXT_ENCRYPT_KEY_BITS+7)/8)
 #endif
 

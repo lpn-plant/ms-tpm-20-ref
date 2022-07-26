@@ -59,13 +59,13 @@
                 TestHash(DEFAULT_TEST_HASH, vector);
 
 // Make sure that the algorithm has been tested
-#define CLEAR_BOTH(alg)     {   CLEAR_BIT(alg, *toTest);                        \
+#define CLEAR_BOTH(alg)     {   MS_TPM_CLEAR_BIT(alg, *toTest);                        \
                                 if(toTest != &g_toTest)                         \
-                                    CLEAR_BIT(alg, g_toTest); }
+                                    MS_TPM_CLEAR_BIT(alg, g_toTest); }
 
-#define SET_BOTH(alg)     {   SET_BIT(alg, *toTest);                            \
+#define SET_BOTH(alg)     {   MS_TPM_SET_BIT(alg, *toTest);                            \
                                 if(toTest != &g_toTest)                         \
-                                    SET_BIT(alg, g_toTest); }
+                                    MS_TPM_SET_BIT(alg, g_toTest); }
 
 #define TEST_BOTH(alg)       ((toTest != &g_toTest)                              \
                             ? TEST_BIT(alg, *toTest) || TEST_BIT(alg, g_toTest)  \
@@ -813,7 +813,7 @@ TestAlgorithm(
         // silently CLEAR it. Decided to just clear.
         if(!TEST_BIT(alg, g_implementedAlgorithms))
         {
-            CLEAR_BIT(alg, *toTest);
+            MS_TPM_CLEAR_BIT(alg, *toTest);
             continue;
         }
         // Process whatever is left.
@@ -862,7 +862,7 @@ TestAlgorithm(
                     // to test one of the modes for the symmetric algorithms. If
                     // initializing for a SelfTest(FULL_TEST), allow all the modes.
                     if(toTest == &g_toTest)
-                        CLEAR_BIT(alg, *toTest);
+                        MS_TPM_CLEAR_BIT(alg, *toTest);
                 break;
 #ifndef TPM_ALG_HMAC
 #   error   HMAC is required in all TPM implementations
@@ -946,7 +946,7 @@ TestAlgorithm(
                 break;
 #endif // TPM_ALG_ECC
             default:
-                CLEAR_BIT(alg, *toTest);
+                MS_TPM_CLEAR_BIT(alg, *toTest);
                 break;
         }
         if(result != TPM_RC_SUCCESS)
